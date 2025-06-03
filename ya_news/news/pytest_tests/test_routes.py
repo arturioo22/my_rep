@@ -1,6 +1,6 @@
-from http import HTTPStatus
-
 import pytest
+
+from http import HTTPStatus
 
 pytestmark = pytest.mark.django_db
 
