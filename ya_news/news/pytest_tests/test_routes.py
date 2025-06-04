@@ -6,16 +6,16 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.mark.parametrize(
-    'url_name, user_role, expected_status',
+    'url_name, client_fixture, expected_status',
     [
-        ('home_url', 'anonymous', HTTPStatus.OK),
-        ('detail_url', 'anonymous', HTTPStatus.OK),
-        ('login_url', 'anonymous', HTTPStatus.OK),
-        ('signup_url', 'anonymous', HTTPStatus.OK),
-        ('comment_edit_url', 'author', HTTPStatus.OK),
-        ('comment_delete_url', 'author', HTTPStatus.OK),
-        ('comment_edit_url', 'reader', HTTPStatus.NOT_FOUND),
-        ('comment_delete_url', 'reader', HTTPStatus.NOT_FOUND),
+        ('home_url', 'client', HTTPStatus.OK),
+        ('detail_url', 'client', HTTPStatus.OK),
+        ('login_url', 'client', HTTPStatus.OK),
+        ('signup_url', 'client', HTTPStatus.OK),
+        ('comment_edit_url', 'author_client', HTTPStatus.OK),
+        ('comment_delete_url', 'author_client', HTTPStatus.OK),
+        ('comment_edit_url', 'reader_client', HTTPStatus.NOT_FOUND),
+        ('comment_delete_url', 'reader_client', HTTPStatus.NOT_FOUND),
     ],
     ids=[
         'home-anonymous',
@@ -29,20 +29,12 @@ pytestmark = pytest.mark.django_db
     ]
 )
 def test_pages_availability(
-    url_name, user_role, expected_status,
-    client, author_client, reader_client, request
+    url_name, client_fixture, expected_status, request
 ):
     """Тестирует доступность страниц для разных пользователей."""
     url = request.getfixturevalue(url_name)
-
-    if user_role == 'author':
-        client_instance = author_client
-    elif user_role == 'reader':
-        client_instance = reader_client
-    else:
-        client_instance = client
-
-    response = client_instance.get(url)
+    client = request.getfixturevalue(client_fixture)
+    response = client.get(url)
     assert response.status_code == expected_status
 
 

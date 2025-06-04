@@ -28,7 +28,9 @@ def test_authorized_comment(author_client, author, news, detail_url):
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == f'{detail_url}#comments'
     assert news.comment_set.count() == initial_count + 1
-    comment = news.comment_set.get()
+    comments = news.comment_set.all()
+    assert comments.count() == 1
+    comment = comments.get()
     assert comment.text == comment_text
     assert comment.author == author
     assert comment.news == news
@@ -45,12 +47,13 @@ def test_bad_words(author_client, news, detail_url):
     assert WARNING in response.context['form'].errors['text']
 
 
-def test_author_comment(author_client, comment, news, detail_url):
+def test_author_comment(
+        author_client, comment, news, detail_url, comment_edit_url
+):
     """Авторизованный пользователь может редактировать свои комментарии."""
     initial_count = news.comment_set.count()
-    edit_url = reverse('news:edit', args=(comment.pk,))
     new_text = 'Обновленный текст комментария'
-    response = author_client.post(edit_url, data={'text': new_text})
+    response = author_client.post(comment_edit_url, data={'text': new_text})
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == f"{detail_url}#comments"
     assert news.comment_set.count() == initial_count
@@ -60,11 +63,12 @@ def test_author_comment(author_client, comment, news, detail_url):
     assert updated_comment.news == comment.news
 
 
-def test_author_delete_comment(author_client, comment, news, detail_url):
+def test_author_delete_comment(
+        author_client, comment, news, detail_url, comment_delete_url
+):
     """Авторизованный пользователь может удалять свои комментарии."""
     initial_count = news.comment_set.count()
-    delete_url = reverse('news:delete', args=(comment.pk,))
-    response = author_client.post(delete_url)
+    response = author_client.post(comment_delete_url)
     assert response.status_code == HTTPStatus.FOUND
     assert response.url == f"{detail_url}#comments"
     assert news.comment_set.count() == initial_count - 1
@@ -72,20 +76,14 @@ def test_author_delete_comment(author_client, comment, news, detail_url):
 
 def test_edit_comment_another_user(reader_client, comment):
     """Авторизованный пользователь не может редактировать чужие комментарии."""
-    original_data = {
-        'text': comment.text,
-        'author': comment.author,
-        'news': comment.news,
-        'created': comment.created
-    }
     edit_url = reverse('news:edit', args=(comment.pk,))
     response = reader_client.post(edit_url, data={'text': 'Новый текст'})
     assert response.status_code == HTTPStatus.NOT_FOUND
     updated_comment = Comment.objects.get(pk=comment.pk)
-    assert updated_comment.text == original_data['text']
-    assert updated_comment.author == original_data['author']
-    assert updated_comment.news == original_data['news']
-    assert updated_comment.created == original_data['created']
+    assert updated_comment.text == comment.text
+    assert updated_comment.author == comment.author
+    assert updated_comment.news == comment.news
+    assert updated_comment.created == comment.created
 
 
 def test_delete_comment_another_user(reader_client, comment):

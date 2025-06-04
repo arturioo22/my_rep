@@ -1,52 +1,14 @@
 from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
-from django.test import Client, TestCase
-from django.urls import reverse
 
-from notes.models import Note
+from .conftest import BaseTestCase
 
 User = get_user_model()
 
 
-class BaseTestCase(TestCase):
-
-    @classmethod
-    def setUpTestData(cls):
-        """Общие тестовые данные."""
-        cls.author = User.objects.create(username='Автор заметки')
-        cls.reader = User.objects.create(username='Другой пользователь')
-        cls.author_client = Client()
-        cls.reader_client = Client()
-        cls.author_client.force_login(cls.author)
-        cls.reader_client.force_login(cls.reader)
-
-
 class TestRoutes(BaseTestCase):
     """Тестирование маршрутов."""
-
-    @classmethod
-    def setUpTestData(cls):
-        super().setUpTestData()
-        cls.note = Note.objects.create(
-            title='Заголовок',
-            text='Текст заметки',
-            author=cls.author,
-            slug='test-note'
-        )
-
-        cls.urls = {
-            'home': reverse('notes:home'),
-            'login': reverse('users:login'),
-            'signup': reverse('users:signup'),
-            'list': reverse('notes:list'),
-            'success': reverse('notes:success'),
-            'add': reverse('notes:add'),
-            'detail': reverse('notes:detail', args=(cls.note.slug,)),
-            'edit': reverse('notes:edit', args=(cls.note.slug,)),
-            'delete': reverse('notes:delete', args=(cls.note.slug,)),
-        }
-        cls.login_url = cls.urls['login']
 
     def test_availability_anonymous(self):
         """Проверка доступности страниц анонимному пользователю."""
@@ -102,6 +64,6 @@ class TestRoutes(BaseTestCase):
         )
         for url in private_urls:
             with self.subTest(url=url):
-                redirect_url = f'{self.login_url}?next={url}'
+                redirect_url = f'{self.urls["login"]}?next={url}'
                 response = self.client.get(url)
                 self.assertRedirects(response, redirect_url)

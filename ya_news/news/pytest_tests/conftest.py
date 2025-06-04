@@ -40,12 +40,6 @@ def reader_client(reader):
 
 
 @pytest.fixture
-def client():
-    """Создает неавторизованного клиента."""
-    return Client()
-
-
-@pytest.fixture
 def news():
     """Создает тестовую новость."""
     return News.objects.create(title='Заголовок', text='Текст новости')
@@ -80,7 +74,6 @@ def multiple_news():
 def multiple_comments(news, author):
     """Создает несколько комментариев с разными датами."""
     now = datetime.now()
-    comments = []
     for index in range(5):
         comment = Comment.objects.create(
             news=news,
@@ -89,8 +82,6 @@ def multiple_comments(news, author):
         )
         comment.created = now + timedelta(hours=index)
         comment.save()
-        comments.append(comment)
-    return comments
 
 
 @pytest.fixture
